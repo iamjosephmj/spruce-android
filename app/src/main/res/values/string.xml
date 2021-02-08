@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~     Spruce
   ~
@@ -21,30 +20,35 @@
   ~
   -->
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:id="@+id/recycler_fragment"
-              android:orientation="vertical"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
-
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/recycler_tool_bar"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:theme="@style/LightToolbarTheme"
-        android:background="@color/colorPrimary"/>
-
-
-    <!--    This checkbox facilitates of the view exclusion logic-->
-    <CheckBox
-        android:id="@+id/view_exclusion"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/exclude" />
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-
-</LinearLayout>
+<resources>
+    <string-array name="interpolator_array">
+        <item>ease</item>
+        <item>easeIn</item>
+        <item>easeOut</item>
+        <item>easeInOut</item>
+        <item>easeInQuad</item>
+        <item>easeInCubic</item>
+        <item>easeInQuart</item>
+        <item>easeInQuint</item>
+        <item>easeInSine</item>
+        <item>easeInExpo</item>
+        <item>easeInCirc</item>
+        <item>easeInBack</item>
+        <item>easeOutQuad</item>
+        <item>easeOutCubic</item>
+        <item>easeOutQuart</item>
+        <item>easeOutQuint</item>
+        <item>easeOutSine</item>
+        <item>easeOutExpo</item>
+        <item>easeOutCirc</item>
+        <item>easeOutBack</item>
+        <item>easeInOutQuad</item>
+        <item>easeInOutCubic</item>
+        <item>easeInOutQuart</item>
+        <item>easeInOutQuint</item>
+        <item>easeInOutSine</item>
+        <item>easeInOutExpo</item>
+        <item>easeInOutCirc</item>
+        <item>easeInOutBack</item>
+    </string-array>
+</resources>

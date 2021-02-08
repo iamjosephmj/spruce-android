@@ -20,37 +20,43 @@
  *
  */
 
-package com.willowtreeapps.spurceexampleapp.widgets;
+package com.willowtreeapps.spruce.dynamics;
 
-import android.content.Context;
-import android.util.AttributeSet;
-import android.view.LayoutInflater;
-import android.widget.LinearLayout;
+import java.util.ArrayList;
+import java.util.List;
 
-import com.willowtreeapps.spurceexampleapp.R;
+/**
+ * This class is eqivalent to {@link android.view.animation.AnimationSet} for dynamic animations.
+ */
+public class DynamicAnimatorSet {
 
-import androidx.annotation.Nullable;
+    private List<SpruceDynamics<?>> anim = new ArrayList<>();
 
-public class CardLayout extends LinearLayout {
-
-    public CardLayout(Context context) {
-        super(context);
-        init();
+    /**
+     * Sets up this AnimatorSet to play all of the supplied animations at the same time.
+     *
+     * @param items The animations that will be started simultaneously.
+     */
+    public void playTogether(List<SpruceDynamics<?>> items) {
+        anim = items;
     }
 
-    public CardLayout(Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
-        init();
+    /**
+     * This method is used to cancel the animation.
+     */
+    public void cancel() {
+        for (SpruceDynamics<?> anim : anim) {
+            anim.cancel();
+        }
     }
 
-    public CardLayout(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        init();
-    }
 
-    private void init() {
-        LayoutInflater inflater = LayoutInflater.from(getContext());
-        inflater.inflate(R.layout.view_card, this, true);
+    /**
+     * This method is used to start all queued dynamic animations.
+     */
+    public void start() {
+        for (SpruceDynamics<?> anim : anim) {
+            anim.start();
+        }
     }
-
 }

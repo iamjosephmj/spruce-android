@@ -13,11 +13,19 @@ Spruce is a lightweight animation library that helps choreograph the animations 
 </p>
 
 ### Gradle
+Add the following to your project's root build.gradle file
+```gradle
+repositories {
+	maven {
+		url  "https://dl.bintray.com/bfears/maven"
+	}
+}
+```
 Add the following to your project's build.gradle file
 
 ```gradle
 dependencies {
-    compile 'com.willowtreeapps.spruce:spruce-android:1.0.1'
+    implementation 'com.willowtreeapps.spruce:spruce-android:1.0.3'
 }
 ```
 
@@ -104,6 +112,106 @@ To make sure that developers can use Spruce out of the box, we included about 8 
 
 Check out the docs [here](https://willowtreeapps.github.io/spruce-android/com/willowtreeapps/spruce/sort/SortFunction.html) for more information
 
+### View Exclusion Feature
+
+Spruce Animate all the views inside the view group. One of the key tips for pulling the best performance out of an Android app is to maintain a flat hierarchy. Spruce is now Introducing a new Exclusion feature.  
+This work in 2 modes:
+- NORMAL_MODE: This mode should be used when you have view groups like Constraint/Frame/Relative/Linear Layouts. We feed a list of ids to be excluded to the SpruceBuilder.
+- R_L_MODE: This mode is used when we have ListView/RecyclerView. The only difference with the first mode is that we pass in the positions to be excluded instead of Ids.
+
+```java
+Animator spruceAnimator = new Spruce
+        .SpruceBuilder(parentViewGroup)
+        .sortWith(new LinearSort(/*interObjectDelay=*/100L, /*reversed=*/false, LinearSort.Direction.TOP_TO_BOTTOM))
+        .excludeViews(getExcludedViewIds(), NORMAL_MODE)
+        //or 
+       .excludeViews(getExcludedViewPosition(), R_L_MODE)
+        .start();
+```
+
+### Sort Function Interpolators
+
+Spruce now allows the user to control the overall flow of sort function using Interpolators. 
+
+```java
+Animator spruceAnimator = new Spruce
+        .SpruceBuilder(parentViewGroup)
+        .sortWith(new LinearSort(/*interObjectDelay=*/100L, /*reversed=*/false, LinearSort.Direction.TOP_TO_BOTTOM))
+        .addInterpolator(new LinearInterpolator())
+        .start();
+```
+
+Spruce gives you a wide variety of stock interpolators to choose from.
+
+- `SpruceInterpolators.EASE`
+- `SpruceInterpolators.EASE_IN`
+- `SpruceInterpolators.EASE_OUT`
+- `SpruceInterpolators.EASE_IN_OUT`
+- `SpruceInterpolators.EASE_IN_QUAD`
+- `SpruceInterpolators.EASE_IN_CUBIC`
+- `SpruceInterpolators.EASE_IN_QUART`
+- `SpruceInterpolators.EASE_IN_QUINT`
+- `SpruceInterpolators.EASE_IN_SINE`
+- `SpruceInterpolators.EASE_IN_EXPO`
+- ` SpruceInterpolators.EASE_IN_CIRC`
+- ` SpruceInterpolators.EASE_IN_BACK`
+- ` SpruceInterpolators.EASE_OUT_QUAD`
+- ` SpruceInterpolators.EASE_OUT_CUBIC`
+- ` SpruceInterpolators.EASE_OUT_QUART`
+- ` SpruceInterpolators.EASE_OUT_QUINT`
+- ` SpruceInterpolators.EASE_OUT_SINE`
+- ` SpruceInterpolators.EASE_OUT_EXPO`
+- ` SpruceInterpolators.EASE_OUT_CIRC`
+- ` SpruceInterpolators.EASE_OUT_BACK`
+- ` SpruceInterpolators.EASE_IN_OUT_QUAD`
+- ` SpruceInterpolators.EASE_IN_OUT_CUBIC`
+- ` SpruceInterpolators.EASE_IN_OUT_QUART`
+- ` SpruceInterpolators.EASE_IN_OUT_QUINT`
+- ` SpruceInterpolators.EASE_IN_OUT_SINE`
+- ` SpruceInterpolators.EASE_IN_OUT_EXPO`
+- ` SpruceInterpolators.EASE_IN_OUT_CIRC`
+- ` SpruceInterpolators.EASE_IN_OUT_BACK` 
+
+Checkout [interpolator documentation](https://developer.android.com/reference/android/view/animation/Interpolator) for more information.
+
+## Spruce Dynamics
+
+Spruce now supports Dynamic Animations. Spruce Dynamics is an extension of the [androidx dynamic animations](https://developer.android.com/jetpack/androidx/releases/dynamicanimation).
+
+These are the option that SpruceDynamics exposes to the developers:
+- Allows start delay for dynamic animations
+- Animation Property is now exposed (developers can set progress of the animations dynamically) 
+
+
+You can create your own Spring/Fling animations from SpruceDynamics and add them to the '.animateWith' function for
+playing the animations in the respective ViewGroup
+
+```java
+Animator spruceAnimator = new Spruce
+        .SpruceBuilder(parentViewGroup)
+        .sortWith(new LinearSort(/*interObjectDelay=*/100L, /*reversed=*/false, LinearSort.Direction.TOP_TO_BOTTOM))
+        .animateWith(DefaultAnimations.dynamicTranslationUpwards(parent))
+        .start();
+```
+
+Above all these, With spruce, you can implement a combination of both Android Animations and Spruce Dynamics at the same time.
+
+ ```java
+
+ animators = new Object[]{
+         DefaultAnimations.dynamicTranslationUpwards(parent),
+         DefaultAnimations.dynamicFadeIn(parent),
+         DefaultAnimations.shrinkAnimator(parent,800)
+ };
+
+
+ Animator spruceAnimator = new Spruce
+         .SpruceBuilder(parentViewGroup)
+         .sortWith(new LinearSort(/*interObjectDelay=*/100L, /*reversed=*/false, LinearSort.Direction.TOP_TO_BOTTOM))
+         .animateWith(animators)
+         .start();
+ ```
+
 ## Stock Animators
 To make everybody's lives easier, the stock animators perform basic `View` animations that a lot of apps use today. Mix and match these animators to get the core motion you are looking for.
 
@@ -112,6 +220,8 @@ To make everybody's lives easier, the stock animators perform basic `View` anima
 - `DefaultAnimations.fadeAwayAnimator(View view, long duration)`
 - `DefaultAnimations.fadeInAnimator(View view, long duration)`
 - `DefaultAnimations.spinAnimator(View view, long duration)`
+- `DefaultAnimations.dynamicTranslationUpwards(View view)`
+- `DefaultAnimations.dynamicFadeIn(View view, long duration)`
 
 Experiment which ones work for you! If you think of anymore feel free to add them to the library yourself!
 

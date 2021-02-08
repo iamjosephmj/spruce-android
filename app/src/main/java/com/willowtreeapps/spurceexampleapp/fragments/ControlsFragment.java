@@ -22,15 +22,19 @@
 
 package com.willowtreeapps.spurceexampleapp.fragments;
 
-import android.animation.Animator;
+import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.IdRes;
-import android.support.annotation.Nullable;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Interpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -41,7 +45,12 @@ import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import androidx.annotation.IdRes;
+import androidx.annotation.Nullable;
+import androidx.fragment.app.Fragment;
+
 import com.willowtreeapps.spruce.Spruce;
+import com.willowtreeapps.spruce.SpruceAnimator;
 import com.willowtreeapps.spruce.animation.DefaultAnimations;
 import com.willowtreeapps.spruce.sort.ContinuousSort;
 import com.willowtreeapps.spruce.sort.ContinuousWeightedSort;
@@ -55,9 +64,13 @@ import com.willowtreeapps.spruce.sort.SnakeSort;
 import com.willowtreeapps.spruce.sort.SortFunction;
 import com.willowtreeapps.spurceexampleapp.R;
 import com.willowtreeapps.spurceexampleapp.SpruceActivity;
+import com.willowtreeapps.spurceexampleapp.helpers.InterpolatorSelector;
 import com.willowtreeapps.spurceexampleapp.widgets.RadioGroupGridLayout;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import static com.willowtreeapps.spruce.exclusion.ExclusionHelper.NORMAL_MODE;
 
 
 public class ControlsFragment extends Fragment implements RadioGroupGridLayout.OnChangedListener {
@@ -72,7 +85,7 @@ public class ControlsFragment extends Fragment implements RadioGroupGridLayout.O
     private static final int RANDOM_SORT = 7;
     private static final int SNAKE_SORT = 8;
 
-    private Animator spruceAnimator;
+    private SpruceAnimator spruceAnimator;
     private SeekBar seekBar;
     private Spinner sortDropDown;
     private RadioGroup linearRadioGroup;
@@ -86,8 +99,14 @@ public class ControlsFragment extends Fragment implements RadioGroupGridLayout.O
     private TextView animationEndText;
     private TextView seekBarTitle;
     private EditText codeSample;
+    private CheckBox excludeView;
+    private Button btnInterpolator;
 
-    private Animator[] animators;
+    private Interpolator interpolator = new LinearInterpolator();
+
+    private AlertDialog.Builder builderSingle;
+
+    private Object[] animators;
     private LinearSort.Direction direction;
     private CorneredSort.Corner corner;
 
@@ -122,11 +141,17 @@ public class ControlsFragment extends Fragment implements RadioGroupGridLayout.O
         animationEndText = (TextView) rootView.findViewById(R.id.animation_end);
         seekBarTitle = (TextView) rootView.findViewById(R.id.seek_bar_title);
         codeSample = (EditText) rootView.findViewById(R.id.code_sample);
+        excludeView = (CheckBox) rootView.findViewById(R.id.view_exclusion);
+        btnInterpolator = (Button) rootView.findViewById(R.id.btn_interpolator);
 
-        animators = new Animator[]{
-                DefaultAnimations.shrinkAnimator(parent, /*duration=*/800),
-                DefaultAnimations.fadeInAnimator(parent, /*duration=*/800)
+        btnInterpolator.setAllCaps(false);
+
+        animators = new Object[]{
+                DefaultAnimations.dynamicTranslationUpwards(parent),
+                DefaultAnimations.dynamicFadeIn(parent)
         };
+
+        initInterpolatorSelection();
 
         View.OnClickListener click = new View.OnClickListener() {
             @Override
@@ -310,6 +335,57 @@ public class ControlsFragment extends Fragment implements RadioGroupGridLayout.O
         return rootView;
     }
 
+    /**
+     * This method is used to set the interpolator for {@link Spruce} builder.
+     */
+    private void initInterpolatorSelection() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            /*
+             * Path Interpolator is only supported only versions >=
+             * {@link Build.VERSION_CODES.LOLLIPOP}
+             */
+            final InterpolatorSelector selector = new InterpolatorSelector();
+
+            builderSingle = new AlertDialog.Builder(getActivity());
+            builderSingle.setTitle(getResources().getString(R.string.interpolator));
+            final ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(getContext(),
+                    android.R.layout.select_dialog_singlechoice);
+            arrayAdapter.addAll(getResources().getStringArray(R.array.interpolator_array));
+            builderSingle.setNegativeButton(getResources().getString(R.string.cancel), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+
+            builderSingle.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    btnInterpolator.setText(arrayAdapter.getItem(which));
+                    interpolator = selector.getInterpolatorMap(which);
+                    dialog.dismiss();
+                }
+            });
+            initializeInterpolatorClickListener();
+        } else {
+            // Don't need to show, user can use predefined interpolator from the framework.
+            btnInterpolator.setVisibility(View.GONE);
+        }
+
+    }
+
+    /**
+     * This method is used to setup click listener for the interpolator selection button.
+     */
+    private void initializeInterpolatorClickListener() {
+        btnInterpolator.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                builderSingle.show();
+            }
+        });
+    }
+
     @Override
     public void onResume() {
         super.onResume();
@@ -332,18 +408,15 @@ public class ControlsFragment extends Fragment implements RadioGroupGridLayout.O
         setupSort();
     }
 
+    @SuppressLint("StringFormatMatches")
     private void setupSort() {
         SortFunction sortFunction;
         switch (sortDropDown.getSelectedItemPosition()) {
-            case DEFAULT_SORT:
-                sortFunction = new DefaultSort(seekBar.getProgress());
-                codeSample.setText(String.format(getResources().getString(R.string.default_sort_code), seekBar.getProgress()));
-                break;
             case CORNERED_SORT:
                 sortFunction = new CorneredSort(seekBar.getProgress(), linearReversed.isChecked(), corner);
                 codeSample.setText(String.format(getResources().getString(R.string.cornered_sort_code),
                         seekBar.getProgress(),
-                        String.valueOf(linearReversed.isChecked()),
+                        linearReversed.isChecked(),
                         corner));
                 break;
             case CONTINUOUS_SORT:
@@ -352,7 +425,7 @@ public class ControlsFragment extends Fragment implements RadioGroupGridLayout.O
                         positionalRadioGroup.getPosition());
                 codeSample.setText(String.format(getResources().getString(R.string.continuous_sort_code),
                         seekBar.getProgress() * /*timePaddingOffset=*/20,
-                        String.valueOf(linearReversed.isChecked()),
+                        linearReversed.isChecked(),
                         positionalRadioGroup.getPosition()));
                 break;
             case CONTINUOUS_WEIGHTED_SORT:
@@ -363,29 +436,29 @@ public class ControlsFragment extends Fragment implements RadioGroupGridLayout.O
                         verticalWeight);
                 codeSample.setText(String.format(getResources().getString(R.string.continuous_weighted_sort_code),
                         seekBar.getProgress() * /*timePaddingOffset=*/20,
-                        String.valueOf(linearReversed.isChecked()),
+                        linearReversed.isChecked(),
                         positionalRadioGroup.getPosition(),
-                        String.valueOf(horizontalWeight),
-                        String.valueOf(verticalWeight)));
+                        horizontalWeight,
+                        verticalWeight));
                 break;
             case INLINE_SORT:
                 sortFunction = new InlineSort(seekBar.getProgress(), linearReversed.isChecked(), corner);
                 codeSample.setText(String.format(getResources().getString(R.string.inline_sort_code),
                         seekBar.getProgress(),
-                        String.valueOf(linearReversed.isChecked()),
+                        linearReversed.isChecked(),
                         corner));
                 break;
             case LINEAR_SORT:
                 sortFunction = new LinearSort(seekBar.getProgress(), linearReversed.isChecked(), direction);
                 codeSample.setText(String.format(getResources().getString(R.string.linear_sort_code),
                         seekBar.getProgress(),
-                        String.valueOf(linearReversed.isChecked()),
+                        linearReversed.isChecked(),
                         direction));
                 break;
             case RADIAL_SORT:
                 sortFunction = new RadialSort(seekBar.getProgress(), linearReversed.isChecked(), positionalRadioGroup.getPosition());
                 codeSample.setText(String.format(getResources().getString(R.string.radial_sort_code), seekBar.getProgress(),
-                        String.valueOf(linearReversed.isChecked()),
+                        linearReversed.isChecked(),
                         positionalRadioGroup.getPosition()));
                 break;
             case RANDOM_SORT:
@@ -396,7 +469,7 @@ public class ControlsFragment extends Fragment implements RadioGroupGridLayout.O
                 sortFunction = new SnakeSort(seekBar.getProgress(), linearReversed.isChecked(), corner);
                 codeSample.setText(String.format(getResources().getString(R.string.snake_sort_code),
                         seekBar.getProgress(),
-                        String.valueOf(linearReversed.isChecked()),
+                        linearReversed.isChecked(),
                         corner));
                 break;
             default:
@@ -416,8 +489,29 @@ public class ControlsFragment extends Fragment implements RadioGroupGridLayout.O
 
         spruceAnimator = new Spruce.SpruceBuilder(parent).sortWith(sortFunction)
                 .animateWith(animators)
+                .addInterpolator(interpolator)
+                .excludeViews(getExclusionViews(), NORMAL_MODE)
                 .start();
 
+    }
+
+    /**
+     * getExclusionViews method has a predefined set of Id that will be excluded from the
+     * choreography.
+     *
+     * @return returns the list of ids to be excluded.
+     */
+    private List<Integer> getExclusionViews() {
+        List<Integer> ids = new ArrayList<>();
+        if (excludeView.isChecked()) {
+            ids.add(1);
+            ids.add(10);
+            ids.add(17);
+            ids.add(21);
+            ids.add(26);
+            ids.add(30);
+        }
+        return ids;
     }
 
 }

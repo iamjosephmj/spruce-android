@@ -20,37 +20,14 @@
  *
  */
 
-package com.willowtreeapps.spurceexampleapp.widgets;
+package com.willowtreeapps.spruce.dynamics;
 
-import android.content.Context;
-import android.util.AttributeSet;
-import android.view.LayoutInflater;
-import android.widget.LinearLayout;
+/**
+ * Hide this for now, in case we want to change the API.
+ */
+interface Force {
+    // Acceleration based on position.
+    float getAcceleration(float position, float velocity);
 
-import com.willowtreeapps.spurceexampleapp.R;
-
-import androidx.annotation.Nullable;
-
-public class CardLayout extends LinearLayout {
-
-    public CardLayout(Context context) {
-        super(context);
-        init();
-    }
-
-    public CardLayout(Context context, @Nullable AttributeSet attrs) {
-        super(context, attrs);
-        init();
-    }
-
-    public CardLayout(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        init();
-    }
-
-    private void init() {
-        LayoutInflater inflater = LayoutInflater.from(getContext());
-        inflater.inflate(R.layout.view_card, this, true);
-    }
-
+    boolean isAtEquilibrium(float value, float velocity);
 }
